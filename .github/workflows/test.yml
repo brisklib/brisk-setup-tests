@@ -1,12 +1,17 @@
 name: Setup tests
 
 on:
+  push:
+    tags:
+      - '**'
+    branches:
+      - '**'
   workflow_dispatch:
     inputs:
       run_id:
         description: 'Id of GitHub Workflow run'
         required: true
-    
+
 jobs:
   download_both:
     strategy:
