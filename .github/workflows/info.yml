@@ -1,0 +1,25 @@
+name: Information
+
+on:
+  push:
+    tags:
+      - '**'
+    branches:
+      - '**'
+  workflow_dispatch:
+
+jobs:
+  one:
+    strategy:
+      fail-fast: false
+      matrix:
+        image: [ubuntu-latest, ubuntu-24.04-arm, ubuntu-24.04, macos-13, macos-latest,windows-latest, windows-2025, windows-2022, windows-11-arm]
+    runs-on: ${{matrix.image}}
+    steps:
+    - name: Print runner info
+      run: |
+        echo runner.os=${{runner.os}}
+        echo runner.arch=${{runner.arch}}
+        echo runner.name=${{runner.name}}
+        echo runner.temp=${{runner.temp}}
+        echo runner.tool_cache=${{runner.tool_cache}}
