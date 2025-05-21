@@ -107,7 +107,7 @@ jobs:
       shell: powershell
       run: >
         & 'C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\Tools\Launch-VsDevShell.ps1'
-        -Arch ${{ startsWith(matrix.triplet, 'arm64-') && 'arm64' || (startsWith(matrix.triplet, 'x64-') && 'amd64' || 'x86') }} ;
+        -Arch ${{ startsWith(matrix.triplet, 'arm64-') && 'arm64' || (startsWith(matrix.triplet, 'x64-') && 'amd64' || 'x86') }} -HostArch amd64 ;
         cmake -GNinja -S example -B build_ninja 
         -DCMAKE_PREFIX_PATH=${{ github.workspace }}/dist/lib/cmake
         -DCMAKE_TOOLCHAIN_FILE=${{ github.workspace }}/deps/scripts/buildsystems/vcpkg.cmake
@@ -145,7 +145,7 @@ jobs:
       shell: powershell
       run: >        
         & 'C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\Tools\Launch-VsDevShell.ps1'
-        -Arch ${{ startsWith(matrix.triplet, 'arm64-') && 'arm64' || (startsWith(matrix.triplet, 'x64-') && 'amd64' || 'x86') }} ;
+        -Arch ${{ startsWith(matrix.triplet, 'arm64-') && 'arm64' || (startsWith(matrix.triplet, 'x64-') && 'amd64' || 'x86') }} -HostArch amd64 ;
         cmake --build build_ninja
 
     - name: Build (Non-Windows/Ninja)
