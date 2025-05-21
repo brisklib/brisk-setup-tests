@@ -284,3 +284,12 @@ jobs:
         path-to-brisk: ${{github.workspace}}/dist
         path-to-vcpkg: ${{ runner.os == 'Windows' && 'C:/vcpkg' || '/usr/local/share/vcpkg' }}
         path-to-installed: ${{github.workspace}}/brisk/vcpkg_installed
+
+    - name: Upload buildtrees
+      if: failure()
+      uses: actions/upload-artifact@v4
+      with:
+        name: vcpkg-buildtrees-${{matrix.triplet}}
+        retention-days: 1
+        path: |
+          ${{ runner.os == 'Windows' && 'C:/vcpkg' || '/usr/local/share/vcpkg' }}/buildtrees
