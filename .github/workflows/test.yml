@@ -7,10 +7,6 @@ on:
     branches:
       - '**'
   workflow_dispatch:
-    inputs:
-      run_id:
-        description: 'Id of GitHub Workflow run'
-        required: true
 
 jobs:
   download_both:
@@ -53,6 +49,14 @@ jobs:
 
     runs-on: ${{matrix.image}}
     steps:
+      - name: Get latest workflow run ID
+        id: get-run-id
+        run: |
+          RUN_ID=$(curl -s -H "Authorization: Bearer $GITHUB_TOKEN" \
+            -H "Accept: application/vnd.github.v3+json" \
+            "https://api.github.com/repos/brisklib/brisk/actions/workflows/test.yml/runs?status=success&per_page=1" \
+            | jq -r '.workflow_runs[0].id')
+          echo "run_id=$RUN_ID" >> $GITHUB_OUTPUT
       - name: Download latest artifact
         uses: actions/download-artifact@v4
         with:
@@ -60,7 +64,7 @@ jobs:
           repository: brisklib/brisk
           path: ./artifacts
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          run-id: ${{ inputs.run_id }}
+          run-id: ${{ steps.get-run-id.outputs.run_id }}
 
       - name: Extract archives
         shell: bash
