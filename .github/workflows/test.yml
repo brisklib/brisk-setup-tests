@@ -8,6 +8,15 @@ on:
       - '**'
   workflow_dispatch:
 
+env:
+  AWS_ACCESS_KEY_ID: ${{secrets.GHBIN_ACCESS_KEY}}
+  AWS_SECRET_ACCESS_KEY: ${{secrets.GHBIN_SECRET_KEY}}
+  AWS_DEFAULT_REGION: fra1
+  AWS_ENDPOINT_URL: https://fra1.digitaloceanspaces.com
+  AWS_ENDPOINT_URL_S3: https://fra1.digitaloceanspaces.com
+  VCPKG_FEATURE_FLAGS: binarycaching
+  VCPKG_BINARY_SOURCES: "clear;x-aws,s3://gh-bin/bincache/,readwrite"
+
 jobs:
   # prebuilt_both:
   #   strategy:
@@ -107,7 +116,94 @@ jobs:
   #       path-to-installed: ${{github.workspace}}/deps/installed
 
 
-  prebuilt_deps:
+  # prebuilt_deps:
+  #   strategy:
+  #     fail-fast: false
+  #     matrix:
+  #       include:
+  #         - triplet: x64-linux
+  #           image: ubuntu-24.04
+
+  #         - triplet: x64-osx
+  #           image: macos-latest
+  #         - triplet: arm64-osx
+  #           image: macos-latest
+  #         - triplet: uni-osx
+  #           image: macos-latest
+
+  #         - triplet: x64-windows-static-md
+  #           image: windows-2022
+  #         - triplet: x86-windows-static-md
+  #           image: windows-2022
+  #         - triplet: arm64-windows-static-md
+  #           image: windows-2022
+  #         - triplet: arm64-windows-static-md
+  #           image: windows-11-arm
+  #         - triplet: x64-windows-static
+  #           image: windows-2022
+  #         - triplet: x86-windows-static
+  #           image: windows-2022
+  #         - triplet: arm64-windows-static
+  #           image: windows-2022
+  #         - triplet: arm64-windows-static
+  #           image: windows-11-arm
+
+  #   runs-on: ${{matrix.image}}
+  #   steps:
+  #   - name: Checkout
+  #     uses: actions/checkout@v4
+
+  #   - name: Install prerequisites
+  #     uses: ./.github/actions/install-build-prerequisites
+  #     with:
+  #       triplet: ${{matrix.triplet}}
+
+  #   - name: Checkout
+  #     uses: actions/checkout@v4
+  #     with:
+  #       repository: brisklib/brisk
+  #       ref: main
+  #       path: brisk
+
+  #   - name: Acquire dependencies
+  #     run: |
+  #       cmake -DDEP_BUILD=OFF -DVCPKG_TARGET_TRIPLET=${{matrix.triplet}} -P brisk/acquire-deps.cmake
+
+  #   - name: Build Brisk
+  #     uses: ./.github/actions/build-brisk
+  #     with:
+  #       triplet: ${{matrix.triplet}}
+  #       path-to-brisk: ${{github.workspace}}/dist
+  #       path-to-vcpkg: ${{github.workspace}}/brisk/vcpkg_exported
+  #       path-to-installed: ${{github.workspace}}/brisk/vcpkg_installed
+
+  #   - name: Build Example (Ninja)
+  #     uses: ./.github/actions/build-ninja
+  #     with:
+  #       triplet: ${{matrix.triplet}}
+  #       path-to-brisk: ${{github.workspace}}/dist
+  #       path-to-vcpkg: ${{github.workspace}}/brisk/vcpkg_exported
+  #       path-to-installed: ${{github.workspace}}/brisk/vcpkg_installed
+
+  #   - name: Build Example (Xcode)
+  #     if: ${{ runner.os == 'macOS' }}
+  #     uses: ./.github/actions/build-xcode
+  #     with:
+  #       triplet: ${{matrix.triplet}}
+  #       path-to-brisk: ${{github.workspace}}/dist
+  #       path-to-vcpkg: ${{github.workspace}}/brisk/vcpkg_exported
+  #       path-to-installed: ${{github.workspace}}/brisk/vcpkg_installed
+
+  #   - name: Build Example (Visual Studio)
+  #     if: ${{ runner.os == 'Windows' }}
+  #     uses: ./.github/actions/build-vs
+  #     with:
+  #       triplet: ${{matrix.triplet}}
+  #       path-to-brisk: ${{github.workspace}}/dist
+  #       path-to-vcpkg: ${{github.workspace}}/brisk/vcpkg_exported
+  #       path-to-installed: ${{github.workspace}}/brisk/vcpkg_installed
+
+  build_both:
     strategy:
       fail-fast: false
       matrix:
@@ -118,8 +214,6 @@ jobs:
           - triplet: x64-osx
             image: macos-latest
           - triplet: arm64-osx
-            image: macos-latest
-          - triplet: uni-osx
             image: macos-latest
 
           - triplet: x64-windows-static-md
@@ -156,40 +250,36 @@ jobs:
         ref: main
         path: brisk
 
-    - name: Acquire dependencies
-      run: |
-        cmake -DDEP_BUILD=OFF -DVCPKG_TARGET_TRIPLET=${{matrix.triplet}} -P brisk/acquire-deps.cmake
-
     - name: Build Brisk
       uses: ./.github/actions/build-brisk
       with:
         triplet: ${{matrix.triplet}}
         path-to-brisk: ${{github.workspace}}/dist
-        path-to-vcpkg: ${{github.workspace}}/brisk/vcpkg_exported
+        path-to-vcpkg: ${{ runner.os == 'Windows' && 'C:/vcpkg' || '/usr/local/share/vcpkg' }}
         path-to-installed: ${{github.workspace}}/brisk/vcpkg_installed
 
-    - name: Build (Ninja)
+    - name: Build Example (Ninja)
       uses: ./.github/actions/build-ninja
       with:
         triplet: ${{matrix.triplet}}
         path-to-brisk: ${{github.workspace}}/dist
-        path-to-vcpkg: ${{github.workspace}}/brisk/vcpkg_exported
+        path-to-vcpkg: ${{ runner.os == 'Windows' && 'C:/vcpkg' || '/usr/local/share/vcpkg' }}
         path-to-installed: ${{github.workspace}}/brisk/vcpkg_installed
 
-    - name: Build (Xcode)
+    - name: Build Example (Xcode)
       if: ${{ runner.os == 'macOS' }}
       uses: ./.github/actions/build-xcode
       with:
         triplet: ${{matrix.triplet}}
         path-to-brisk: ${{github.workspace}}/dist
-        path-to-vcpkg: ${{github.workspace}}/brisk/vcpkg_exported
+        path-to-vcpkg: ${{ runner.os == 'Windows' && 'C:/vcpkg' || '/usr/local/share/vcpkg' }}
         path-to-installed: ${{github.workspace}}/brisk/vcpkg_installed
 
-    - name: Build (Visual Studio)
+    - name: Build Example (Visual Studio)
       if: ${{ runner.os == 'Windows' }}
       uses: ./.github/actions/build-vs
       with:
         triplet: ${{matrix.triplet}}
         path-to-brisk: ${{github.workspace}}/dist
-        path-to-vcpkg: ${{github.workspace}}/brisk/vcpkg_exported
+        path-to-vcpkg: ${{ runner.os == 'Windows' && 'C:/vcpkg' || '/usr/local/share/vcpkg' }}
         path-to-installed: ${{github.workspace}}/brisk/vcpkg_installed
