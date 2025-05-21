@@ -29,10 +29,10 @@ runs:
 
   - name: Configure (Non-Windows/Ninja)
     if: ${{ runner.os != 'Windows' }}
-    shell: powershell
+    shell: bash
     run: >
       cmake -GNinja -S brisk -B build-release -DBRISK_TESTS=OFF -DBRISK_EXAMPLES=ON ${{inputs.path-to-vcpkg}}/scripts/buildsystems/vcpkg.cmake -DVCPKG_INSTALLED_DIR=${{inputs.path-to-installed}} -DBRISK_WEBGPU=ON 
-      -DVCPKG_MANIFEST_INSTALL=OFF -DCMAKE_INSTALL_PREFIX=${{inputs.path-to-brisk}} -DVCPKG_TARGET_TRIPLET=${{inputs.triplet}} -DCMAKE_BUILD_TYPE=Release
+      -DVCPKG_MANIFEST_INSTALL=OFF -DCMAKE_INSTALL_PREFIX=${{inputs.path-to-brisk}} -DVCPKG_TARGET_TRIPLET=${{inputs.triplet}} -DCMAKE_BUILD_TYPE=Release &&
       cmake -GNinja -S brisk -B build-debug   -DBRISK_TESTS=OFF -DBRISK_EXAMPLES=ON ${{inputs.path-to-vcpkg}}/scripts/buildsystems/vcpkg.cmake -DVCPKG_INSTALLED_DIR=${{inputs.path-to-installed}} -DBRISK_WEBGPU=ON 
       -DVCPKG_MANIFEST_INSTALL=OFF -DCMAKE_INSTALL_PREFIX=${{inputs.path-to-brisk}} -DVCPKG_TARGET_TRIPLET=${{inputs.triplet}} -DCMAKE_BUILD_TYPE=Debug
 
