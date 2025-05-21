@@ -85,17 +85,19 @@ jobs:
         path: example
     - name: List files
       shell: bash
-      run: tree
+      run: |
+        ls -la ${{github.workspace}}
+        tree ${{github.workspace}}/dist/lib/cmake
     - name: Configure
       shell: bash
       run: >
         cmake -GNinja -S example -B build 
-            -DCMAKE_PREFIX_PATH=${{github.workspace}}/dist/lib/cmake 
-            -DCMAKE_TOOLCHAIN_FILE=${{github.workspace}}/deps/scripts/buildsystems/vcpkg.cmake 
-            -DVCPKG_INSTALLED_DIR=${{github.workspace}}/deps/installed
-            -DCMAKE_BUILD_TYPE=Release
-            -DVCPKG_TARGET_TRIPLET=${{ matrix.triplet }} 
-            -DVCPKG_HOST_TRIPLET=${{ matrix.triplet }}
+        -DCMAKE_PREFIX_PATH=${{github.workspace}}/dist/lib/cmake
+        -DCMAKE_TOOLCHAIN_FILE=${{github.workspace}}/deps/scripts/buildsystems/vcpkg.cmake
+        -DVCPKG_INSTALLED_DIR=${{github.workspace}}/deps/installed
+        -DCMAKE_BUILD_TYPE=Release
+        -DVCPKG_TARGET_TRIPLET=${{ matrix.triplet }}
+        -DVCPKG_HOST_TRIPLET=${{ matrix.triplet }}
     - name: Build
       shell: bash
       run: |
