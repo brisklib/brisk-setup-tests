@@ -104,11 +104,10 @@ jobs:
 
     - name: Configure (Windows/Ninja)
       if: ${{ contains(matrix.triplet, '-windows') }}
-      env:
-        VS_ROOT: C:\Program Files\Microsoft Visual Studio\2022\Enterprise
       shell: powershell
       run: >
-        Import-Module "$Env:VS_ROOT\Common7\Tools\Microsoft.VisualStudio.DevShell.dll"; Enter-VsDevShell -VsInstallPath "$Env:VS_ROOT" -SkipAutomaticLocation -DevCmdArguments '-arch=${{ startsWith(matrix.triplet, 'arm64-') && 'x64_arm64' || (startsWith(matrix.triplet, 'x64-') && 'x64' || 'x64_x86') }}' ;
+        & 'C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\Tools\Launch-VsDevShell.ps1'
+        -Arch ${{ startsWith(matrix.triplet, 'arm64-') && 'arm64' || (startsWith(matrix.triplet, 'x64-') && 'amd64' || 'x86') }} ;
         cmake -GNinja -S example -B build_ninja 
         -DCMAKE_PREFIX_PATH=${{ github.workspace }}/dist/lib/cmake
         -DCMAKE_TOOLCHAIN_FILE=${{ github.workspace }}/deps/scripts/buildsystems/vcpkg.cmake
