@@ -4,6 +4,15 @@ inputs:
   triplet:
     description: 'Triplet'
     required: true
+  path-to-brisk:
+    description: 'Brisk package directory'
+    required: true
+  path-to-vcpkg:
+    description: 'Vcpkg directory'
+    required: true
+  path-to-installed:
+    description: 'Vcpkg installed directory'
+    required: true
     
 runs:
   using: "composite"
@@ -15,9 +24,9 @@ runs:
       cmake -G"Visual Studio 17 2022" 
       -A ${{ startsWith(inputs.triplet, 'arm64-') && 'ARM64' || (startsWith(inputs.triplet, 'x64-') && 'x64' || 'Win32') }}
       -S example -B build_vs
-      -DCMAKE_PREFIX_PATH=${{ github.workspace }}/dist/lib/cmake
-      -DCMAKE_TOOLCHAIN_FILE=${{ github.workspace }}/deps/scripts/buildsystems/vcpkg.cmake
-      -DVCPKG_INSTALLED_DIR=${{ github.workspace }}/deps/installed
+      "-DCMAKE_PREFIX_PATH=${{ inputs.path-to-brisk }}/lib/cmake"
+      "-DCMAKE_TOOLCHAIN_FILE=${{ inputs.path-to-vcpkg }}/scripts/buildsystems/vcpkg.cmake"
+      "-DVCPKG_INSTALLED_DIR=${{ inputs.path-to-installed }}"
       -DVCPKG_TARGET_TRIPLET=${{ inputs.triplet }}
       -DVCPKG_HOST_TRIPLET=${{(startsWith(inputs.triplet, 'arm64-') && runner.arch != 'ARM64' ) && 'x64-windows-static-md' || inputs.triplet}}
       -DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded$<$<CONFIG:Debug>:Debug>${{ endsWith(inputs.triplet, '-md') && 'DLL' || '' }}

@@ -4,7 +4,16 @@ inputs:
   triplet:
     description: 'Triplet'
     required: true
-    
+  path-to-brisk:
+    description: 'Brisk package directory'
+    required: true
+  path-to-vcpkg:
+    description: 'Vcpkg directory'
+    required: true
+  path-to-installed:
+    description: 'Vcpkg installed directory'
+    required: true
+
 runs:
   using: "composite"
   steps:
@@ -15,23 +24,23 @@ runs:
       & 'C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\Tools\Launch-VsDevShell.ps1'
       -Arch ${{ startsWith(inputs.triplet, 'arm64-') && 'arm64' || (startsWith(inputs.triplet, 'x64-') && 'amd64' || 'x86') }}
       -HostArch amd64 ;
-      cmake -GNinja -S example -B build_ninja 
-      -DCMAKE_PREFIX_PATH=${{ github.workspace }}/dist/lib/cmake
-      -DCMAKE_TOOLCHAIN_FILE=${{ github.workspace }}/deps/scripts/buildsystems/vcpkg.cmake
-      -DVCPKG_INSTALLED_DIR=${{ github.workspace }}/deps/installed
+      cmake -GNinja -S example -B build_ninja
+      "-DCMAKE_PREFIX_PATH=${{ inputs.path-to-brisk }}/lib/cmake"
+      "-DCMAKE_TOOLCHAIN_FILE=${{ inputs.path-to-vcpkg }}/scripts/buildsystems/vcpkg.cmake"
+      "-DVCPKG_INSTALLED_DIR=${{ inputs.path-to-installed }}"
       -DCMAKE_BUILD_TYPE=Release
       -DVCPKG_TARGET_TRIPLET=${{ inputs.triplet }}
       -DVCPKG_HOST_TRIPLET=${{(startsWith(inputs.triplet, 'arm64-') && runner.arch != 'ARM64' ) && 'x64-windows-static-md' || inputs.triplet}}
-      -DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded$<$<CONFIG:Debug>:Debug>${{ endsWith(inputs.triplet, '-md') && 'DLL' || '' }}
+      "-DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded$<$<CONFIG:Debug>:Debug>${{ endsWith(inputs.triplet, '-md') && 'DLL' || '' }}"
 
   - name: Configure (Linux/Ninja)
     if: ${{ runner.os == 'Linux' }}
     shell: bash
     run: >
       cmake -GNinja -S example -B build_ninja 
-      -DCMAKE_PREFIX_PATH=${{ github.workspace }}/dist/lib/cmake
-      -DCMAKE_TOOLCHAIN_FILE=${{ github.workspace }}/deps/scripts/buildsystems/vcpkg.cmake
-      -DVCPKG_INSTALLED_DIR=${{ github.workspace }}/deps/installed
+      "-DCMAKE_PREFIX_PATH=${{ inputs.path-to-brisk }}/lib/cmake"
+      "-DCMAKE_TOOLCHAIN_FILE=${{ inputs.path-to-vcpkg }}/scripts/buildsystems/vcpkg.cmake"
+      "-DVCPKG_INSTALLED_DIR=${{ inputs.path-to-installed }}"
       -DCMAKE_BUILD_TYPE=Release
       -DVCPKG_TARGET_TRIPLET=${{ inputs.triplet }}
       -DVCPKG_HOST_TRIPLET=${{ inputs.triplet }}
@@ -41,9 +50,9 @@ runs:
     shell: bash
     run: >
       cmake -GNinja -S example -B build_ninja 
-      -DCMAKE_PREFIX_PATH=${{ github.workspace }}/dist/lib/cmake
-      -DCMAKE_TOOLCHAIN_FILE=${{ github.workspace }}/deps/scripts/buildsystems/vcpkg.cmake
-      -DVCPKG_INSTALLED_DIR=${{ github.workspace }}/deps/installed
+      "-DCMAKE_PREFIX_PATH=${{ inputs.path-to-brisk }}/lib/cmake"
+      "-DCMAKE_TOOLCHAIN_FILE=${{ inputs.path-to-vcpkg }}/scripts/buildsystems/vcpkg.cmake"
+      "-DVCPKG_INSTALLED_DIR=${{ inputs.path-to-installed }}"
       -DCMAKE_BUILD_TYPE=Release
       -DCMAKE_OSX_ARCHITECTURES="${{ inputs.triplet == 'uni-osx' && 'x86_64;arm64' || (inputs.triplet == 'arm64-osx' && 'arm64' || 'x86_64') }}"
       -DVCPKG_TARGET_TRIPLET=${{ inputs.triplet }}
