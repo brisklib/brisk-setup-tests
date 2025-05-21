@@ -21,31 +21,31 @@ jobs:
           - triplet: x64-osx
             arch: x86_64
             image: macos-latest
-          # - triplet: arm64-osx
-          #   arch: arm64
-          #   image: macos-latest
-          # - triplet: uni-osx
-          #   arch: arm64;x86_64
-          #   image: macos-latest
+          - triplet: arm64-osx
+            arch: arm64
+            image: macos-latest
+          - triplet: uni-osx
+            arch: arm64;x86_64
+            image: macos-latest
 
           - triplet: x64-windows-static-md
             arch: x64
             image: windows-2022
-          # - triplet: x86-windows-static-md
-          #   arch: Win32
-          #   image: windows-2022
-          # - triplet: arm64-windows-static-md
-          #   arch: ARM64
-          #   image: windows-11-arm
-          # - triplet: x64-windows-static
-          #   arch: x64
-          #   image: windows-2022
-          # - triplet: x86-windows-static
-          #   arch: Win32
-          #   image: windows-2022
-          # - triplet: arm64-windows-static
-          #   arch: ARM64
-          #   image: windows-11-arm
+          - triplet: x86-windows-static-md
+            arch: Win32
+            image: windows-2022
+          - triplet: arm64-windows-static-md
+            arch: ARM64
+            image: windows-11-arm
+          - triplet: x64-windows-static
+            arch: x64
+            image: windows-2022
+          - triplet: x86-windows-static
+            arch: Win32
+            image: windows-2022
+          - triplet: arm64-windows-static
+            arch: ARM64
+            image: windows-11-arm
 
     runs-on: ${{matrix.image}}
     steps:
@@ -80,6 +80,7 @@ jobs:
         run-id: ${{ steps.get-run-id.outputs.run_id }}
 
     - name: Extract archives
+      if: ${{ !contains(matrix.triplet, '-windows') }}
       shell: bash
       run: |
         mkdir dist
@@ -87,13 +88,21 @@ jobs:
         tar -xf ./artifacts/Brisk-Dependencies-*.tar.xz -C deps
         tar -xf ./artifacts/Brisk-Prebuilt-*.tar.xz -C dist
 
+    - name: Extract archives
+      if: ${{ contains(matrix.triplet, '-windows') }}
+      shell: powershell
+      run: |
+        mkdir dist -Force
+        mkdir deps -Force
+        tar -xf (Get-ChildItem ./artifacts/Brisk-Dependencies-*.tar.xz).FullName -C deps
+        tar -xf (Get-ChildItem ./artifacts/Brisk-Prebuilt-*.tar.xz).FullName -C dist
+
     - name: Checkout
       uses: actions/checkout@v4
       with:
         path: example
 
     - name: Configure (Ninja)
-      shell: bash
       run: >
         cmake -GNinja -S example -B build_ninja 
         -DCMAKE_PREFIX_PATH=${{ github.workspace }}/dist/lib/cmake
@@ -105,7 +114,6 @@ jobs:
         -DVCPKG_HOST_TRIPLET=${{ matrix.triplet }}
 
     - name: Build (Ninja)
-      shell: bash
       run: |
         cmake --build build_ninja
 
@@ -123,7 +131,6 @@ jobs:
 
     - name: Build (Xcode)
       if: ${{ contains(matrix.triplet, '-osx') }}
-      shell: bash
       run: |
         cmake --build build_xcode
 
@@ -140,6 +147,5 @@ jobs:
 
     - name: Build (Visual Studio)
       if: ${{ contains(matrix.triplet, '-windows') }}
-      shell: bash
       run: |
         cmake --build build_vs
