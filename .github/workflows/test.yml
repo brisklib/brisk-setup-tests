@@ -1,0 +1,84 @@
+name: Setup tests
+
+on:
+  workflow_dispatch:
+    inputs:
+      run_id:
+        description: 'Id of GitHub Workflow run'
+        required: true
+    
+jobs:
+  download_both:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - triplet: x64-linux
+            arch: x86_64
+            image: ubuntu-24.04
+
+          - triplet: x64-osx
+            arch: x86_64
+            image: macos-latest
+          - triplet: arm64-osx
+            arch: arm64
+            image: macos-latest
+          - triplet: uni-osx
+            arch: arm64;x86_64
+            image: macos-latest
+
+          - triplet: x64-windows-static-md
+            arch: x64
+            image: windows-2022
+          - triplet: x86-windows-static-md
+            arch: Win32
+            image: windows-2022
+          - triplet: arm64-windows-static-md
+            arch: ARM64
+            image: windows-11-arm
+          - triplet: x64-windows-static
+            arch: x64
+            image: windows-2022
+          - triplet: x86-windows-static
+            arch: Win32
+            image: windows-2022
+          - triplet: arm64-windows-static
+            arch: ARM64
+            image: windows-11-arm
+
+    runs-on: ${{matrix.image}}
+    steps:
+      - name: Download latest artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ matrix.triplet }}
+          repository: brisklib/brisk
+          path: ./artifacts
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          run-id: ${{ inputs.run_id }}
+      - name: List downloaded artifacts
+        shell: bash
+        run: ls -R ./artifacts
+
+      - name: Extract archives
+        shell: bash
+        run: |
+          mkdir dist
+          mkdir deps
+          tar -xf ./artifacts/Brisk-Dependencies-*.tar.xz -C deps
+          tar -xf ./artifacts/Brisk-Prebuilt-*.tar.xz -C dist
+
+      - name: Configure
+        shell: bash
+        run: >
+          cmake -GNinja -S . -B build 
+              -DCMAKE_PREFIX_PATH=dist/lib/cmake 
+              -DCMAKE_TOOLCHAIN_FILE=deps/scripts/buildsystems/vcpkg.cmake 
+              -DVCPKG_INSTALLED_DIR=deps/installed
+              -DCMAKE_BUILD_TYPE=Release
+              -DVCPKG_TARGET_TRIPLET=${{ matrix.triplet }} 
+              -DVCPKG_HOST_TRIPLET=${{ matrix.triplet }}
+      - name: Build
+        shell: bash
+        run: |
+          cmake --build build
