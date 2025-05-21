@@ -257,6 +257,7 @@ jobs:
         path-to-brisk: ${{github.workspace}}/dist
         path-to-vcpkg: ${{ runner.os == 'Windows' && 'C:/vcpkg' || '/usr/local/share/vcpkg' }}
         path-to-installed: ${{github.workspace}}/brisk/vcpkg_installed
+        manifest-install: 'ON'
 
     - name: Build Example (Ninja)
       uses: ./.github/actions/build-ninja
