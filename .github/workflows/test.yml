@@ -76,6 +76,9 @@ jobs:
 
     runs-on: ${{matrix.image}}
     steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
     - name: Install prerequisites
       uses: ./.github/actions/install-prerequisites
       with:
@@ -109,11 +112,6 @@ jobs:
         mkdir deps
         tar -xf ./artifacts/Brisk-Dependencies-*.tar.xz -C deps
         tar -xf ./artifacts/Brisk-Prebuilt-*.tar.xz -C dist
-
-    - name: Checkout
-      uses: actions/checkout@v4
-      with:
-        path: example
 
     - name: Build (Ninja)
       uses: ./.github/actions/build-ninja
