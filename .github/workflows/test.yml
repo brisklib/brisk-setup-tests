@@ -162,7 +162,7 @@ jobs:
     - name: Build (Xcode)
       if: ${{ contains(matrix.triplet, '-osx') }}
       run: |
-        cmake --build build_xcode --target Release
+        cmake --build build_xcode --config Release
 
     - name: Configure (Visual Studio)
       if: ${{ contains(matrix.triplet, '-windows') }}
@@ -177,4 +177,4 @@ jobs:
     - name: Build (Visual Studio)
       if: ${{ contains(matrix.triplet, '-windows') }}
       run: |
-        cmake --build build_vs --target Release
+        cmake --build build_vs --config Release
