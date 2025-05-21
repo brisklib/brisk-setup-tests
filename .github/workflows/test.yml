@@ -162,7 +162,7 @@ jobs:
   #     uses: actions/checkout@v4
   #     with:
   #       repository: brisklib/brisk
-  #       ref: main
+  #       ref: beta
   #       path: brisk
 
   #   - name: Acquire dependencies
@@ -247,7 +247,7 @@ jobs:
       uses: actions/checkout@v4
       with:
         repository: brisklib/brisk
-        ref: main
+        ref: beta
         path: brisk
 
     - name: Build Brisk
