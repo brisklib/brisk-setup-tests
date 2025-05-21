@@ -1,0 +1,65 @@
+name: 'Build using Ninja'
+description: 'Builds app using Ninja'
+inputs:
+  triplet:
+    description: 'Triplet'
+    required: true
+    
+runs:
+  using: "composite"
+  steps:
+  - name: Configure (Windows/Ninja)
+    if: ${{ runner.os == 'Windows' }}
+    shell: powershell
+    run: >
+      & 'C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\Tools\Launch-VsDevShell.ps1'
+      -Arch ${{ startsWith(inputs.triplet, 'arm64-') && 'arm64' || (startsWith(inputs.triplet, 'x64-') && 'amd64' || 'x86') }}
+      -HostArch amd64 ;
+      cmake -GNinja -S example -B build_ninja 
+      -DCMAKE_PREFIX_PATH=${{ github.workspace }}/dist/lib/cmake
+      -DCMAKE_TOOLCHAIN_FILE=${{ github.workspace }}/deps/scripts/buildsystems/vcpkg.cmake
+      -DVCPKG_INSTALLED_DIR=${{ github.workspace }}/deps/installed
+      -DCMAKE_BUILD_TYPE=Release
+      -DVCPKG_TARGET_TRIPLET=${{ inputs.triplet }}
+      -DVCPKG_HOST_TRIPLET=${{(startsWith(inputs.triplet, 'arm64-') && runner.arch != 'ARM64' ) && 'x64-windows-static-md' || inputs.triplet}}
+      -DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded$<$<CONFIG:Debug>:Debug>${{ endsWith(inputs.triplet, '-md') && 'DLL' || '' }}
+
+  - name: Configure (Linux/Ninja)
+    if: ${{ runner.os == 'Linux' }}
+    shell: bash
+    run: >
+      cmake -GNinja -S example -B build_ninja 
+      -DCMAKE_PREFIX_PATH=${{ github.workspace }}/dist/lib/cmake
+      -DCMAKE_TOOLCHAIN_FILE=${{ github.workspace }}/deps/scripts/buildsystems/vcpkg.cmake
+      -DVCPKG_INSTALLED_DIR=${{ github.workspace }}/deps/installed
+      -DCMAKE_BUILD_TYPE=Release
+      -DVCPKG_TARGET_TRIPLET=${{ inputs.triplet }}
+      -DVCPKG_HOST_TRIPLET=${{ inputs.triplet }}
+
+  - name: Configure (macOS/Ninja)
+    if: ${{ runner.os == 'macOS' }}
+    shell: bash
+    run: >
+      cmake -GNinja -S example -B build_ninja 
+      -DCMAKE_PREFIX_PATH=${{ github.workspace }}/dist/lib/cmake
+      -DCMAKE_TOOLCHAIN_FILE=${{ github.workspace }}/deps/scripts/buildsystems/vcpkg.cmake
+      -DVCPKG_INSTALLED_DIR=${{ github.workspace }}/deps/installed
+      -DCMAKE_BUILD_TYPE=Release
+      -DCMAKE_OSX_ARCHITECTURES="${{ matrix.arch }}"
+      -DVCPKG_TARGET_TRIPLET=${{ inputs.triplet }}
+      -DVCPKG_HOST_TRIPLET=${{ inputs.triplet }}
+
+  - name: Build (Windows/Ninja)
+    if: ${{ runner.os == 'Windows' }}
+    shell: powershell
+    run: >
+      & 'C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\Tools\Launch-VsDevShell.ps1'
+      -Arch ${{ startsWith(inputs.triplet, 'arm64-') && 'arm64' || (startsWith(inputs.triplet, 'x64-') && 'amd64' || 'x86') }}
+      -HostArch amd64 ;
+      cmake --build build_ninja
+  
+  - name: Build (Non-Windows/Ninja)
+    if: ${{ runner.os != 'Windows' }}
+    shell: bash
+    run: >
+      cmake --build build_ninja

@@ -9,64 +9,77 @@ on:
   workflow_dispatch:
 
 jobs:
-  download_both:
+
+  # prebuilt_deps:
+  #   strategy:
+  #     fail-fast: false
+  #     matrix:
+  #       include:
+  #         - triplet: x64-linux
+  #           arch: x86_64
+  #           image: ubuntu-24.04
+  #   runs-on: ${{matrix.image}}
+  #   steps:
+  #   - name: Install prerequisites
+  #     uses: ./.github/actions/install-build-prerequisites
+  #     with:
+  #       triplet: ${{matrix.triplet}}
+
+  #   - name: Checkout
+  #     uses: actions/checkout@v4
+  #     with:
+  #       repository: brisklib/brisk
+  #       ref: main
+  #       path: brisk
+
+  #   - name: Acquire dependencies
+  #     run: |
+  #       cmake -DDEP_BUILD=OFF -P acquire-deps.cmake
+
+  #   - name: Checkout
+  #     uses: actions/checkout@v4
+
+  #   - 
+
+
+  prebuilt_both:
     strategy:
       fail-fast: false
       matrix:
         include:
           - triplet: x64-linux
-            arch: x86_64
             image: ubuntu-24.04
 
           - triplet: x64-osx
-            arch: x86_64
             image: macos-latest
           - triplet: arm64-osx
-            arch: arm64
             image: macos-latest
           - triplet: uni-osx
-            arch: arm64;x86_64
             image: macos-latest
 
           - triplet: x64-windows-static-md
-            arch: x64
             image: windows-2022
           - triplet: x86-windows-static-md
-            arch: Win32
             image: windows-2022
           - triplet: arm64-windows-static-md
-            arch: ARM64
             image: windows-2022
           - triplet: arm64-windows-static-md
-            arch: ARM64
             image: windows-11-arm
           - triplet: x64-windows-static
-            arch: x64
             image: windows-2022
           - triplet: x86-windows-static
-            arch: Win32
             image: windows-2022
           - triplet: arm64-windows-static
-            arch: ARM64
             image: windows-2022
           - triplet: arm64-windows-static
-            arch: ARM64
             image: windows-11-arm
 
     runs-on: ${{matrix.image}}
     steps:
-    - name: Install prerequisites (Linux)
-      if: ${{ contains(matrix.triplet, '-linux') }}
-      run: |
-        sudo apt-get update && sudo apt-get install -y build-essential ninja-build cmake git
-    - name: Install prerequisites (macOS)
-      if: ${{ contains(matrix.triplet, '-osx') }}
-      run: |
-        brew install cmake git ninja
-    - name: Install prerequisites (Windows)
-      if: ${{ contains(matrix.triplet, '-windows') }}
-      run: |
-        choco install ninja --no-progress -y
+    - name: Install prerequisites
+      uses: ./.github/actions/install-prerequisites
+      with:
+        triplet: ${{matrix.triplet}}
 
     - name: Get latest workflow run ID
       id: get-run-id
@@ -102,85 +115,19 @@ jobs:
       with:
         path: example
 
-    - name: Configure (Windows/Ninja)
-      if: ${{ contains(matrix.triplet, '-windows') }}
-      shell: powershell
-      run: >
-        & 'C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\Tools\Launch-VsDevShell.ps1'
-        -Arch ${{ startsWith(matrix.triplet, 'arm64-') && 'arm64' || (startsWith(matrix.triplet, 'x64-') && 'amd64' || 'x86') }} -HostArch amd64 ;
-        cmake -GNinja -S example -B build_ninja 
-        -DCMAKE_PREFIX_PATH=${{ github.workspace }}/dist/lib/cmake
-        -DCMAKE_TOOLCHAIN_FILE=${{ github.workspace }}/deps/scripts/buildsystems/vcpkg.cmake
-        -DVCPKG_INSTALLED_DIR=${{ github.workspace }}/deps/installed
-        -DCMAKE_BUILD_TYPE=Release
-        -DVCPKG_TARGET_TRIPLET=${{ matrix.triplet }}
-        -DVCPKG_HOST_TRIPLET=${{(startsWith(matrix.triplet, 'arm64-') && matrix.image != 'windows-11-arm' ) && 'x64-windows-static-md' || matrix.triplet}}
-        -DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded$<$<CONFIG:Debug>:Debug>${{ endsWith(matrix.triplet, '-md') && 'DLL' || '' }}
-
-    - name: Configure (Linux/Ninja)
-      if: ${{ contains(matrix.triplet, '-linux') }}
-      run: >
-        cmake -GNinja -S example -B build_ninja 
-        -DCMAKE_PREFIX_PATH=${{ github.workspace }}/dist/lib/cmake
-        -DCMAKE_TOOLCHAIN_FILE=${{ github.workspace }}/deps/scripts/buildsystems/vcpkg.cmake
-        -DVCPKG_INSTALLED_DIR=${{ github.workspace }}/deps/installed
-        -DCMAKE_BUILD_TYPE=Release
-        -DVCPKG_TARGET_TRIPLET=${{ matrix.triplet }}
-        -DVCPKG_HOST_TRIPLET=${{ matrix.triplet }}
-
-    - name: Configure (macOS/Ninja)
-      if: ${{ contains(matrix.triplet, '-osx') }}
-      run: >
-        cmake -GNinja -S example -B build_ninja 
-        -DCMAKE_PREFIX_PATH=${{ github.workspace }}/dist/lib/cmake
-        -DCMAKE_TOOLCHAIN_FILE=${{ github.workspace }}/deps/scripts/buildsystems/vcpkg.cmake
-        -DVCPKG_INSTALLED_DIR=${{ github.workspace }}/deps/installed
-        -DCMAKE_BUILD_TYPE=Release
-        -DCMAKE_OSX_ARCHITECTURES="${{ matrix.arch }}"
-        -DVCPKG_TARGET_TRIPLET=${{ matrix.triplet }}
-        -DVCPKG_HOST_TRIPLET=${{ matrix.triplet }}
-
-    - name: Build (Windows/Ninja)
-      if: ${{ contains(matrix.triplet, '-windows') }}
-      shell: powershell
-      run: >        
-        & 'C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\Tools\Launch-VsDevShell.ps1'
-        -Arch ${{ startsWith(matrix.triplet, 'arm64-') && 'arm64' || (startsWith(matrix.triplet, 'x64-') && 'amd64' || 'x86') }} -HostArch amd64 ;
-        cmake --build build_ninja
-
-    - name: Build (Non-Windows/Ninja)
-      if: ${{ !contains(matrix.triplet, '-windows') }}
-      run: |
-        cmake --build build_ninja
-
-    - name: Configure (Xcode)
-      if: ${{ contains(matrix.triplet, '-osx') }}
-      run: >
-        cmake -GXcode -S example -B build_xcode
-        -DCMAKE_PREFIX_PATH=${{ github.workspace }}/dist/lib/cmake
-        -DCMAKE_TOOLCHAIN_FILE=${{ github.workspace }}/deps/scripts/buildsystems/vcpkg.cmake
-        -DVCPKG_INSTALLED_DIR=${{ github.workspace }}/deps/installed
-        -DCMAKE_OSX_ARCHITECTURES="${{ matrix.arch }}"
-        -DVCPKG_TARGET_TRIPLET=${{ matrix.triplet }}
-        -DVCPKG_HOST_TRIPLET=${{ matrix.triplet }}
+    - name: Build (Ninja)
+      uses: ./.github/actions/build-ninja
+      with:
+        triplet: ${{matrix.triplet}}
 
     - name: Build (Xcode)
-      if: ${{ contains(matrix.triplet, '-osx') }}
-      run: |
-        cmake --build build_xcode --config Release
-
-    - name: Configure (Visual Studio)
-      if: ${{ contains(matrix.triplet, '-windows') }}
-      run: >
-        cmake -G"Visual Studio 17 2022" -A ${{ matrix.arch }} -S example -B build_vs
-        -DCMAKE_PREFIX_PATH=${{ github.workspace }}/dist/lib/cmake
-        -DCMAKE_TOOLCHAIN_FILE=${{ github.workspace }}/deps/scripts/buildsystems/vcpkg.cmake
-        -DVCPKG_INSTALLED_DIR=${{ github.workspace }}/deps/installed
-        -DVCPKG_TARGET_TRIPLET=${{ matrix.triplet }}
-        -DVCPKG_HOST_TRIPLET=${{(startsWith(matrix.triplet, 'arm64-') && matrix.image != 'windows-11-arm' ) && 'x64-windows-static-md' || matrix.triplet}}
-        -DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded$<$<CONFIG:Debug>:Debug>${{ endsWith(matrix.triplet, '-md') && 'DLL' || '' }}
+      if: ${{ runner.os == 'macOS' }}
+      uses: ./.github/actions/build-xcode
+      with:
+        triplet: ${{matrix.triplet}}
 
     - name: Build (Visual Studio)
-      if: ${{ contains(matrix.triplet, '-windows') }}
-      run: |
-        cmake --build build_vs --config Release
+      if: ${{ runner.os == 'Windows' }}
+      uses: ./.github/actions/build-vs
+      with:
+        triplet: ${{matrix.triplet}}

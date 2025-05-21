@@ -1,0 +1,27 @@
+name: 'Build using Xcode'
+description: 'Builds app using Xcode'
+inputs:
+  triplet:
+    description: 'Triplet'
+    required: true
+    
+runs:
+  using: "composite"
+  steps:
+  - name: Configure (Xcode)
+    if: ${{ runner.os == 'macOS' }}
+    shell: bash
+    run: >
+      cmake -GXcode -S example -B build_xcode
+      -DCMAKE_PREFIX_PATH=${{ github.workspace }}/dist/lib/cmake
+      -DCMAKE_TOOLCHAIN_FILE=${{ github.workspace }}/deps/scripts/buildsystems/vcpkg.cmake
+      -DVCPKG_INSTALLED_DIR=${{ github.workspace }}/deps/installed
+      -DCMAKE_OSX_ARCHITECTURES="${{ inputs.triplet == 'uni-osx' && 'x86_64;arm64' || (matrix.triplet == 'arm64-osx') && 'arm64' || 'x86_64') }}"
+      -DVCPKG_TARGET_TRIPLET=${{ inputs.triplet }}
+      -DVCPKG_HOST_TRIPLET=${{ inputs.triplet }}
+
+  - name: Configure (Xcode)
+    if: ${{ runner.os == 'macOS' }}
+    shell: bash
+    run: >
+      cmake --build build_xcode --config Release

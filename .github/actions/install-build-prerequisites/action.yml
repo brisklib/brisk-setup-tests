@@ -1,0 +1,25 @@
+name: 'Install build prerequisites'
+description: 'Installs Brisk build prerequisites'
+inputs:
+  triplet:
+    description: 'Triplet'
+    required: true
+    
+runs:
+  using: "composite"
+  steps:
+  - name: Install prerequisites (Linux)
+    shell: bash
+    if: ${{ runner.os == 'Linux' }}
+    run: |
+      sudo apt-get update && sudo apt-get install -y build-essential ninja-build mesa-vulkan-drivers vulkan-tools wget xorg-dev libgl-dev libgl1-mesa-dev libvulkan-dev autoconf autoconf-archive libxrandr-dev libxinerama-dev libxcursor-dev mesa-common-dev libx11-xcb-dev libwayland-dev libxkbcommon-dev
+  - name: Install prerequisites (macOS)
+    shell: bash
+    if: ${{ runner.os == 'macOS' }}
+    run: |
+      brew install cmake git ninja autoconf automake autoconf-archive tree
+  - name: Install prerequisites (Windows)
+    shell: powershell
+    if: ${{ runner.os == 'Windows' }}
+    run: |
+      choco install ninja --no-progress -y
