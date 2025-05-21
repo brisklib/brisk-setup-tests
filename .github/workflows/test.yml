@@ -49,48 +49,54 @@ jobs:
 
     runs-on: ${{matrix.image}}
     steps:
-      - name: Get latest workflow run ID
-        id: get-run-id
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          RUN_ID=$(curl -s -H "Authorization: Bearer $GITHUB_TOKEN" \
-            -H "Accept: application/vnd.github.v3+json" \
-            "https://api.github.com/repos/brisklib/brisk/actions/workflows/test.yml/runs?status=success&per_page=1" \
-            | jq -r '.workflow_runs[0].id')
-          echo "run_id=$RUN_ID" >> $GITHUB_OUTPUT
-      - name: Download latest artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: ${{ matrix.triplet }}
-          repository: brisklib/brisk
-          path: ./artifacts
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          run-id: ${{ steps.get-run-id.outputs.run_id }}
+    - name: Install prerequisites
+      run: |
+        sudo apt-get update && sudo apt-get install -y tree
+    - name: Get latest workflow run ID
+      id: get-run-id
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        RUN_ID=$(curl -s -H "Authorization: Bearer $GITHUB_TOKEN" \
+          -H "Accept: application/vnd.github.v3+json" \
+          "https://api.github.com/repos/brisklib/brisk/actions/workflows/test.yml/runs?status=success&per_page=1" \
+          | jq -r '.workflow_runs[0].id')
+        echo "run_id=$RUN_ID" >> $GITHUB_OUTPUT
+    - name: Download latest artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: ${{ matrix.triplet }}
+        repository: brisklib/brisk
+        path: ./artifacts
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        run-id: ${{ steps.get-run-id.outputs.run_id }}
 
-      - name: Extract archives
-        shell: bash
-        run: |
-          mkdir dist
-          mkdir deps
-          tar -xf ./artifacts/Brisk-Dependencies-*.tar.xz -C deps
-          tar -xf ./artifacts/Brisk-Prebuilt-*.tar.xz -C dist
+    - name: Extract archives
+      shell: bash
+      run: |
+        mkdir dist
+        mkdir deps
+        tar -xf ./artifacts/Brisk-Dependencies-*.tar.xz -C deps
+        tar -xf ./artifacts/Brisk-Prebuilt-*.tar.xz -C dist
 
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          path: example
-      - name: Configure
-        shell: bash
-        run: >
-          cmake -GNinja -S example -B build 
-              -DCMAKE_PREFIX_PATH=${{github.workspace}}/dist/lib/cmake 
-              -DCMAKE_TOOLCHAIN_FILE=${{github.workspace}}/deps/scripts/buildsystems/vcpkg.cmake 
-              -DVCPKG_INSTALLED_DIR=${{github.workspace}}/deps/installed
-              -DCMAKE_BUILD_TYPE=Release
-              -DVCPKG_TARGET_TRIPLET=${{ matrix.triplet }} 
-              -DVCPKG_HOST_TRIPLET=${{ matrix.triplet }}
-      - name: Build
-        shell: bash
-        run: |
-          cmake --build build
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        path: example
+    - name: List files
+      shell: bash
+      run: tree
+    - name: Configure
+      shell: bash
+      run: >
+        cmake -GNinja -S example -B build 
+            -DCMAKE_PREFIX_PATH=${{github.workspace}}/dist/lib/cmake 
+            -DCMAKE_TOOLCHAIN_FILE=${{github.workspace}}/deps/scripts/buildsystems/vcpkg.cmake 
+            -DVCPKG_INSTALLED_DIR=${{github.workspace}}/deps/installed
+            -DCMAKE_BUILD_TYPE=Release
+            -DVCPKG_TARGET_TRIPLET=${{ matrix.triplet }} 
+            -DVCPKG_HOST_TRIPLET=${{ matrix.triplet }}
+    - name: Build
+      shell: bash
+      run: |
+        cmake --build build
