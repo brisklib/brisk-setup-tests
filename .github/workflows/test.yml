@@ -158,7 +158,7 @@ jobs:
 
     - name: Acquire dependencies
       run: |
-        cmake -DDEP_BUILD=OFF -P acquire-deps.cmake
+        cmake -DDEP_BUILD=OFF -P brisk/acquire-deps.cmake
 
     - name: Build Brisk
       run: |
