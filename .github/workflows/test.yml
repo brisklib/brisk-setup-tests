@@ -18,9 +18,9 @@ jobs:
             arch: x86_64
             image: ubuntu-24.04
 
-          # - triplet: x64-osx
-          #   arch: x86_64
-          #   image: macos-latest
+          - triplet: x64-osx
+            arch: x86_64
+            image: macos-latest
           # - triplet: arm64-osx
           #   arch: arm64
           #   image: macos-latest
@@ -28,9 +28,9 @@ jobs:
           #   arch: arm64;x86_64
           #   image: macos-latest
 
-          # - triplet: x64-windows-static-md
-          #   arch: x64
-          #   image: windows-2022
+          - triplet: x64-windows-static-md
+            arch: x64
+            image: windows-2022
           # - triplet: x86-windows-static-md
           #   arch: Win32
           #   image: windows-2022
@@ -54,6 +54,7 @@ jobs:
         sudo apt-get update && sudo apt-get install -y tree
     - name: Get latest workflow run ID
       id: get-run-id
+      shell: bash
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
@@ -83,22 +84,50 @@ jobs:
       uses: actions/checkout@v4
       with:
         path: example
-    - name: List files
-      shell: bash
-      run: |
-        ls -la ${{github.workspace}}
-        tree ${{github.workspace}}/dist/lib/cmake
-    - name: Configure
+    - name: Configure (Ninja)
       shell: bash
       run: >
-        cmake -GNinja -S example -B build 
-        -DCMAKE_PREFIX_PATH=${{github.workspace}}/dist/lib/cmake
-        -DCMAKE_TOOLCHAIN_FILE=${{github.workspace}}/deps/scripts/buildsystems/vcpkg.cmake
-        -DVCPKG_INSTALLED_DIR=${{github.workspace}}/deps/installed
+        cmake -GNinja -S example -B build_ninja 
+        -DCMAKE_PREFIX_PATH=${{ github.workspace }}/dist/lib/cmake
+        -DCMAKE_TOOLCHAIN_FILE=${{ github.workspace }}/deps/scripts/buildsystems/vcpkg.cmake
+        -DVCPKG_INSTALLED_DIR=${{ github.workspace }}/deps/installed
         -DCMAKE_BUILD_TYPE=Release
         -DVCPKG_TARGET_TRIPLET=${{ matrix.triplet }}
         -DVCPKG_HOST_TRIPLET=${{ matrix.triplet }}
-    - name: Build
+    - name: Build (Ninja)
       shell: bash
       run: |
-        cmake --build build
+        cmake --build build_ninja
+
+    - name: Configure (Xcode)
+      if: ${{ endsWith(matrix.triplet, '-osx') }}
+      run: >
+        cmake -GXcode -S example -B build_xcode
+        -DCMAKE_PREFIX_PATH=${{ github.workspace }}/dist/lib/cmake
+        -DCMAKE_TOOLCHAIN_FILE=${{ github.workspace }}/deps/scripts/buildsystems/vcpkg.cmake
+        -DVCPKG_INSTALLED_DIR=${{ github.workspace }}/deps/installed
+        -DCMAKE_BUILD_TYPE=Release
+        -DCMAKE_OSX_ARCHITECTURES="${{ matrix.arch }}"
+        -DVCPKG_TARGET_TRIPLET=${{ matrix.triplet }}
+        -DVCPKG_HOST_TRIPLET=${{ matrix.triplet }}
+    - name: Build (Xcode)
+      if: ${{ endsWith(matrix.triplet, '-osx') }}
+      shell: bash
+      run: |
+        cmake --build build_xcode
+
+    - name: Configure (Visual Studio)
+      if: ${{ contains(matrix.triplet, '-windows') }}
+      run: >
+        cmake -G"Visual Studio 17 2022" -A ${{ matrix.arch }} -S example -B build_vs
+        -DCMAKE_PREFIX_PATH=${{ github.workspace }}/dist/lib/cmake
+        -DCMAKE_TOOLCHAIN_FILE=${{ github.workspace }}/deps/scripts/buildsystems/vcpkg.cmake
+        -DVCPKG_INSTALLED_DIR=${{ github.workspace }}/deps/installed
+        -DCMAKE_BUILD_TYPE=Release
+        -DVCPKG_TARGET_TRIPLET=${{ matrix.triplet }}
+        -DVCPKG_HOST_TRIPLET=${{ matrix.triplet }}
+    - name: Build (Visual Studio)
+      if: ${{ contains(matrix.triplet, '-windows') }}
+      shell: bash
+      run: |
+        cmake --build build_vs
