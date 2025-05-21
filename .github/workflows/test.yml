@@ -114,7 +114,8 @@ jobs:
         -DVCPKG_INSTALLED_DIR=${{ github.workspace }}/deps/installed
         -DCMAKE_BUILD_TYPE=Release
         -DVCPKG_TARGET_TRIPLET=${{ matrix.triplet }}
-        -DVCPKG_HOST_TRIPLET=${{ matrix.triplet }}
+        -DVCPKG_HOST_TRIPLET=${{(startsWith(matrix.triplet, 'arm64-') && matrix.image != 'windows-11-arm' ) && 'x64-windows-static-md' || matrix.triplet}}
+        -DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded$<$<CONFIG:Debug>:Debug>${{ endsWith(matrix.triplet, '-md') && 'DLL' || '' }}
 
     - name: Configure (Linux/Ninja)
       if: ${{ contains(matrix.triplet, '-linux') }}
