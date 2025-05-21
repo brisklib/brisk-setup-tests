@@ -45,7 +45,7 @@ runs:
       -DCMAKE_TOOLCHAIN_FILE=${{ github.workspace }}/deps/scripts/buildsystems/vcpkg.cmake
       -DVCPKG_INSTALLED_DIR=${{ github.workspace }}/deps/installed
       -DCMAKE_BUILD_TYPE=Release
-      -DCMAKE_OSX_ARCHITECTURES="${{ inputs.triplet == 'uni-osx' && 'x86_64;arm64' || (inputs.triplet == 'arm64-osx') && 'arm64' || 'x86_64') }}"
+      -DCMAKE_OSX_ARCHITECTURES="${{ inputs.triplet == 'uni-osx' && 'x86_64;arm64' || (inputs.triplet == 'arm64-osx' && 'arm64' || 'x86_64') }}"
       -DVCPKG_TARGET_TRIPLET=${{ inputs.triplet }}
       -DVCPKG_HOST_TRIPLET=${{ inputs.triplet }}
 
