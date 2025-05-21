@@ -161,11 +161,12 @@ jobs:
         cmake -DDEP_BUILD=OFF -DVCPKG_TARGET_TRIPLET=${{matrix.triplet}} -P brisk/acquire-deps.cmake
 
     - name: Build Brisk
-      run: |
-        cmake -GNinja -S brisk -B build-release -DVCPKG_MANIFEST_INSTALL=OFF -DCMAKE_INSTALL_PREFIX=${{github.workspace}}/dist -DVCPKG_TARGET_TRIPLET=${{matrix.triplet}} -DCMAKE_BUILD_TYPE=Release
-        cmake --build build-release --target install
-        cmake -GNinja -S brisk -B build-debug -DVCPKG_MANIFEST_INSTALL=OFF -DCMAKE_INSTALL_PREFIX=${{github.workspace}}/dist -DVCPKG_TARGET_TRIPLET=${{matrix.triplet}} -DCMAKE_BUILD_TYPE=Debug
-        cmake --build build-debug --target install
+      uses: ./.github/actions/build-brisk
+      with:
+        triplet: ${{matrix.triplet}}
+        path-to-brisk: ${{github.workspace}}/dist
+        path-to-vcpkg: ${{github.workspace}}/brisk/vcpkg_exported
+        path-to-installed: ${{github.workspace}}/brisk/vcpkg_installed
 
     - name: Build (Ninja)
       uses: ./.github/actions/build-ninja
