@@ -109,6 +109,7 @@ jobs:
         path: example
 
     - name: Configure (Windows/Ninja)
+      if: ${{ contains(matrix.triplet, '-windows') }}
       shell: powershell
       run: >
         & "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvarsall.bat" ${{ startsWith(matrix.triplet, 'arm64-') && 'x64_arm64' || (startsWith(matrix.triplet, 'x64-') && 'x64' || 'x64_x86') }} ;
@@ -121,6 +122,7 @@ jobs:
         -DVCPKG_HOST_TRIPLET=${{ matrix.triplet }}
 
     - name: Configure (Linux/Ninja)
+      if: ${{ contains(matrix.triplet, '-linux') }}
       run: >
         cmake -GNinja -S example -B build_ninja 
         -DCMAKE_PREFIX_PATH=${{ github.workspace }}/dist/lib/cmake
@@ -131,6 +133,7 @@ jobs:
         -DVCPKG_HOST_TRIPLET=${{ matrix.triplet }}
 
     - name: Configure (macOS/Ninja)
+      if: ${{ contains(matrix.triplet, '-osx') }}
       run: >
         cmake -GNinja -S example -B build_ninja 
         -DCMAKE_PREFIX_PATH=${{ github.workspace }}/dist/lib/cmake
