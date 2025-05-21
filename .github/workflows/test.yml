@@ -100,6 +100,7 @@ jobs:
         -DCMAKE_TOOLCHAIN_FILE=${{ github.workspace }}/deps/scripts/buildsystems/vcpkg.cmake
         -DVCPKG_INSTALLED_DIR=${{ github.workspace }}/deps/installed
         -DCMAKE_BUILD_TYPE=Release
+        -DCMAKE_OSX_ARCHITECTURES="${{ matrix.arch }}"
         -DVCPKG_TARGET_TRIPLET=${{ matrix.triplet }}
         -DVCPKG_HOST_TRIPLET=${{ matrix.triplet }}
 
